@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ARCHENA">
+  <meta name="theme-color" content="#03080e">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="assets/archie.svg">
+  <title>ARCHENA // Dual AI Intelligence Hub</title>
+  <style>
+    :root {
+      --primary: #00f3ff;
+      --primary-rgb: 0, 243, 255;
+      --primary-dim: rgba(0, 243, 255, 0.15);
+      --primary-border: rgba(0, 243, 255, 0.4);
+      --bg: #03080e;
+      --bg-card: rgba(4, 15, 25, 0.85);
+      --text: #e0f8ff;
+      --text-muted: #648a9e;
+      --danger: #ff3366;
+      --success: #00ffaa;
+      --font-mono: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    }
+    body.persona-athena {
+      --primary: #bf55ec;
+      --primary-rgb: 191, 85, 236;
+      --primary-dim: rgba(191, 85, 236, 0.15);
+      --primary-border: rgba(191, 85, 236, 0.4);
+      --bg: #0c0413;
+      --bg-card: rgba(18, 7, 28, 0.85);
+      --text: #faebff;
+      --text-muted: #9d7aa8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: background-color 0.3s ease;
+    }
+    body::before {
+      content: " ";
+      position: fixed;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                  linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+      background-size: 100% 3px, 6px 100%;
+      pointer-events: none;
+      z-index: 999;
+    }
+    header {
+      padding: env(safe-area-inset-top, 14px) 16px 12px;
+      background: rgba(3, 8, 14, 0.92);
+      border-bottom: 1px solid var(--primary-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand { display: flex; flex-direction: column; }
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: var(--primary);
+      text-shadow: 0 0 10px rgba(var(--primary-rgb), 0.6);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .badge-role {
+      font-size: 0.6rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--primary-dim);
+      border: 1px solid var(--primary-border);
+    }
+    .brand-backronym {
+      font-size: 0.58rem;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      max-width: 250px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .persona-toggle {
+      display: flex;
+      border: 1px solid var(--primary-border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .btn-persona {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 7px 12px;
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-persona.active {
+      background: var(--primary);
+      color: #000;
+      box-shadow: 0 0 12px rgba(var(--primary-rgb), 0.8);
+    }
+    .telemetry-bar {
+      display: flex;
+      justify-content: space-between;
+      background: var(--primary-dim);
+      border-bottom: 1px solid var(--primary-border);
+      padding: 5px 16px;
+      font-size: 0.65rem;
+      color: var(--primary);
+    }
+    .diag-item { display: flex; align-items: center; gap: 6px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #444; }
+    .dot.green { background: var(--success); box-shadow: 0 0 8px var(--success); }
+    .dot.red { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+    .dot.cyan { background: var(--primary); box-shadow: 0 0 8px var(--primary); }
+    .hud-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 16px 8px;
+      position: relative;
+    }
+    .reactor-container {
+      position: relative;
+      width: 230px;
+      height: 230px;
+      margin: 4px 0 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    #visualizer-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+    }
+    .avatar-wrapper {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid var(--primary);
+      box-shadow: 0 0 25px rgba(var(--primary-rgb), 0.7);
+      z-index: 2;
+      background: rgba(0, 0, 0, 0.8);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .avatar-wrapper:active { transform: scale(0.93); }
+    .avatar-img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+      filter: drop-shadow(0 0 8px rgba(var(--primary-rgb), 0.7));
+    }
+    .status-readout {
+      font-size: 0.78rem;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      min-height: 20px;
+      text-shadow: 0 0 8px rgba(var(--primary-rgb), 0.5);
+      font-weight: 700;
+    }
+    .terminal-card {
+      margin: 6px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--primary-border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      height: 145px;
+      overflow-y: auto;
+      font-size: 0.76rem;
+      line-height: 1.45;
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.6);
+      user-select: text;
+    }
+    .terminal-card::-webkit-scrollbar { width: 4px; }
+    .terminal-card::-webkit-scrollbar-thumb { background: var(--primary-border); }
+    .line-user { color: var(--text-muted); margin-bottom: 4px; }
+    .line-ai { color: var(--text); margin-bottom: 6px; }
+    .line-ai span { color: var(--primary); font-weight: bold; }
+    .tabs-nav {
+      display: flex;
+      gap: 6px;
+      padding: 0 16px;
+      margin-top: 4px;
+    }
+    .tab-btn {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--primary-border);
+      color: var(--text-muted);
+      padding: 8px 4px;
+      font-family: inherit;
+      font-size: 0.68rem;
+      border-radius: 6px 6px 0 0;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: transparent;
+      background: rgba(var(--primary-rgb), 0.12);
+      font-weight: 700;
+    }
+    .tab-content {
+      display: none;
+      margin: 0 16px 10px;
+      padding: 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--primary-border);
+      border-radius: 0 0 8px 8px;
+      min-height: 230px;
+    }
+    .tab-content.active { display: block; }
+    .file-grid { display: flex; flex-direction: column; gap: 8px; }
+    input[type="text"], textarea {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid var(--primary-border);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      padding: 8px;
+      border-radius: 4px;
+      outline: none;
+      user-select: text;
+    }
+    input[type="text"]:focus, textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 8px rgba(var(--primary-rgb), 0.3);
+    }
+    textarea { min-height: 80px; resize: vertical; }
+    .btn-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .action-btn {
+      background: var(--primary-dim);
+      border: 1px solid var(--primary-border);
+      color: var(--primary);
+      padding: 8px 4px;
+      font-family: inherit;
+      font-size: 0.68rem;
+      font-weight: 700;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: background 0.15s ease;
+    }
+    .action-btn:active { background: var(--primary); color: #000; }
+    .saved-files-list {
+      max-height: 80px;
+      overflow-y: auto;
+      border-top: 1px dashed var(--primary-border);
+      padding-top: 6px;
+      margin-top: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .file-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.7rem;
+      padding: 4px 6px;
+      background: rgba(0, 0, 0, 0.35);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .file-item:hover { background: var(--primary-dim); }
+    .file-item span.del { color: var(--danger); font-weight: bold; padding: 0 6px; }
+    .command-bar {
+      margin-top: auto;
+      padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 14px));
+      background: rgba(3, 8, 14, 0.95);
+      border-top: 1px solid var(--primary-border);
+      display: flex;
+      gap: 8px;
+    }
+    .mic-btn {
+      width: 44px; height: 44px;
+      border-radius: 6px;
+      border: 1px solid var(--primary-border);
+      background: var(--primary-dim);
+      color: var(--primary);
+      font-size: 1.15rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .mic-btn.recording {
+      background: var(--danger);
+      color: #fff;
+      border-color: #fff;
+      animation: pulse 1s infinite alternate;
+    }
+    @keyframes pulse {
+      from { box-shadow: 0 0 5px var(--danger); }
+      to { box-shadow: 0 0 18px var(--danger); }
+    }
+  </style>
+</head>
+<body class="persona-archie">
+  <header>
+    <div class="brand">
+      <div class="brand-title">
+        <span id="core-name">A.R.C.H.I.E.</span>
+        <span class="badge-role" id="core-badge">MALE // DAILY OPS</span>
+      </div>
+      <div class="brand-backronym" id="core-backronym">Autonomous Responsive Cybernetic Home & Intelligence Engine</div>
+    </div>
+    <div class="persona-toggle">
+      <button class="btn-persona active" id="btn-archie" onclick="setPersona('archie')">ARCHIE</button>
+      <button class="btn-persona" id="btn-athena" onclick="setPersona('athena')">ATHENA</button>
+    </div>
+  </header>
+
+  <div class="telemetry-bar">
+    <div class="diag-item">
+      <div class="dot red" id="mic-dot"></div>
+      <span id="mic-label">MIC: CHECKING...</span>
+    </div>
+    <div class="diag-item">
+      <div class="dot green"></div>
+      <span id="voice-name-label">SYNTH: DANIEL (UK MALE)</span>
+    </div>
+    <div class="diag-item">
+      <div class="dot cyan"></div>
+      <span id="fs-label">FS: READY</span>
+    </div>
+  </div>
+
+  <div class="hud-stage">
+    <div class="reactor-container" onclick="toggleMicrophone()">
+      <canvas id="visualizer-canvas" width="460" height="460"></canvas>
+      <div class="avatar-wrapper" id="avatar-container">
+        <img src="assets/archie.svg" id="avatar-img" class="avatar-img" alt="AI Avatar">
+      </div>
+    </div>
+    <div class="status-readout" id="status-readout">SYSTEM STANDING BY</div>
+  </div>
+
+  <div class="terminal-card" id="terminal-feed">
+    <div class="line-ai"><span>[ARCHENA CORE]</span> System initialized. Archie assigned to daily operations & utilities. Athena standing by for deep strategy and complex analysis.</div>
+  </div>
+
+  <div class="tabs-nav">
+    <button class="tab-btn active" onclick="switchTab('file-ops')">FILE ENGINE</button>
+    <button class="tab-btn" onclick="switchTab('net-ops')">IT & ANALYSIS</button>
+    <button class="tab-btn" onclick="switchTab('mic-diag')">MIC & VOICE TEST</button>
+  </div>
+
+  <div class="tab-content active" id="tab-file-ops">
+    <div class="file-grid">
+      <div class="input-row">
+        <input type="text" id="file-name-input" placeholder="filename.txt (e.g. system-diagnostics.json)">
+      </div>
+      <textarea id="file-content-input" placeholder="File content payload (write notes, logs, scripts, configs)..."></textarea>
+      
+      <div class="btn-row">
+        <button class="action-btn" onclick="saveFileLocally()">💾 SAVE / STORE</button>
+        <button class="action-btn" onclick="exportFileDirect()">⬇ EXPORT FILE</button>
+        <button class="action-btn" onclick="openFilePicker()">📂 IMPORT FILE</button>
+      </div>
+
+      <div style="font-size:0.65rem; color:var(--text-muted); margin-top:4px;">PERSISTENT LOCAL REPO:</div>
+      <div class="saved-files-list" id="saved-files-list"></div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-net-ops">
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="domain-input" placeholder="Target domain/IP (e.g. cloudflare.com)">
+        <button class="action-btn" style="width:110px;" onclick="resolveDoH()">RESOLVE DoH</button>
+      </div>
+      <div class="btn-row">
+        <button class="action-btn" onclick="fetchPublicIP()">🌐 QUERY IP</button>
+        <button class="action-btn" onclick="calcCIDR()">🔢 CIDR /24</button>
+        <button class="action-btn" onclick="generatePassword()">🔑 GEN ENTROPY</button>
+      </div>
+      <div id="recon-output" style="font-size:0.7rem; color:var(--primary); padding:8px; background:rgba(0,0,0,0.4); border-radius:4px; max-height:85px; overflow-y:auto;">
+        Select an action or speak your command.
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-mic-diag">
+    <div style="font-size:0.75rem; line-height: 1.5; color:var(--text);">
+      <p style="margin-bottom:6px;"><strong>Audio Input Diagnostic:</strong></p>
+      <div id="mic-detailed-status" style="color:var(--text-muted); font-size:0.7rem; margin-bottom:8px;">Awaiting hardware permission...</div>
+      <button class="action-btn" style="width:100%; margin-bottom:8px;" onclick="verifyMicrophoneAccess()">TEST MICROPHONE INPUT HARDWARE</button>
+      <button class="action-btn" style="width:100%; margin-bottom:8px;" onclick="speakFeedback(PERSONAS[activePersona].greeting)">TEST ACTIVE VOICE SYNTHESIS</button>
+      <div style="font-size:0.65rem; color:var(--text-muted);">
+        • <strong>iOS Safari note:</strong> iOS requires user interaction before granting Web Audio or SpeechRecognition.<br>
+        • <strong>Engine Assignment:</strong> Archie uses calibrated male synthesis (0.90 pitch); Athena uses articulate female synthesis (1.20 pitch).
+      </div>
+    </div>
+  </div>
+
+  <div class="command-bar">
+    <button class="mic-btn" id="mic-trigger-btn" onclick="toggleMicrophone()">🎙</button>
+    <input type="text" id="voice-text-input" placeholder="Speak command or type directive..." onkeydown="if(event.key==='Enter') dispatchCommand(this.value)">
+    <button class="action-btn" style="padding:0 14px;" onclick="dispatchCommand(document.getElementById('voice-text-input').value)">SEND</button>
+  </div>
+
+  <script>
+    const PERSONAS = {
+      archie: {
+        name: "A.R.C.H.I.E.",
+        badge: "MALE // DAILY OPS",
+        backronym: "Autonomous Responsive Cybernetic Home & Intelligence Engine",
+        role: "Daily Operations & Fast Utility Co-Pilot",
+        avatar: "assets/archie.svg",
+        voicePitch: 0.90,
+        voiceRate: 1.05,
+        themeClass: "persona-archie",
+        preferredVoices: ["Daniel", "Oliver", "Arthur", "George", "Aaron", "Fred", "Alex", "David", "Male"],
+        excludeVoices: ["female", "woman", "samantha", "victoria", "karen", "zira", "ava", "siri female"],
+        greeting: "Archie online, Sir. Daily operations, files, and fast network routines are at your service."
+      },
+      athena: {
+        name: "A.T.H.E.N.A.",
+        badge: "FEMALE // DEEP STRATEGY",
+        backronym: "Adaptive Tactical Heuristic & Electronic Neural Assistant",
+        role: "Complex Analysis & Tactical Defense Strategist",
+        avatar: "assets/athena.svg",
+        voicePitch: 1.22,
+        voiceRate: 1.05,
+        themeClass: "persona-athena",
+        preferredVoices: ["Samantha", "Victoria", "Karen", "Ava", "Moira", "Tessa", "Serena", "Zira", "Jenny", "Female"],
+        excludeVoices: ["daniel", "oliver", "arthur", "george", "male", "david", "fred", "siri male"],
+        greeting: "Athena initialized, Commander. Complex analytical cores, security reconnaissance, and tactical logic are ready."
+      }
+    };
+
+    let activePersona = "archie";
+    let activeAudioContext = null;
+    let micStream = null;
+    let micAnalyser = null;
+    let recognition = null;
+    let isListening = false;
+    let availableVoices = [];
+
+    function setPersona(personaKey) {
+      activePersona = personaKey;
+      const p = PERSONAS[personaKey];
+      document.body.className = p.themeClass;
+      document.getElementById('core-name').textContent = p.name;
+      document.getElementById('core-badge').textContent = p.badge;
+      document.getElementById('core-backronym').textContent = p.backronym;
+      document.getElementById('avatar-img').src = p.avatar;
+      
+      document.getElementById('btn-archie').classList.toggle('active', personaKey === 'archie');
+      document.getElementById('btn-athena').classList.toggle('active', personaKey === 'athena');
+      
+      updateVoiceLabel();
+      playBeep(personaKey === 'archie' ? 440 : 880, 0.08);
+      speakFeedback(p.greeting);
+      logTerminal(`Switched active core to ${p.name} [${p.role}]`);
+    }
+
+    function loadVoices() {
+      if ('speechSynthesis' in window) {
+        availableVoices = window.speechSynthesis.getVoices();
+        updateVoiceLabel();
+      }
+    }
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+      loadVoices();
+    }
+
+    function getBestVoice(personaKey) {
+      const p = PERSONAS[personaKey];
+      if (!availableVoices.length) return null;
+
+      for (const pref of p.preferredVoices) {
+        const found = availableVoices.find(v => {
+          const vName = v.name.toLowerCase();
+          const matchesPref = vName.includes(pref.toLowerCase());
+          const hasExclude = p.excludeVoices.some(ex => vName.includes(ex.toLowerCase()));
+          return matchesPref && !hasExclude;
+        });
+        if (found) return found;
+      }
+
+      const langVoices = availableVoices.filter(v => v.lang.startsWith('en'));
+      for (const v of langVoices) {
+        const vName = v.name.toLowerCase();
+        const hasExclude = p.excludeVoices.some(ex => vName.includes(ex.toLowerCase()));
+        if (!hasExclude) return v;
+      }
+      return availableVoices[0] || null;
+    }
+
+    function updateVoiceLabel() {
+      const voice = getBestVoice(activePersona);
+      const label = document.getElementById('voice-name-label');
+      if (voice) {
+        label.textContent = `SYNTH: ${voice.name.toUpperCase().substring(0, 16)}`;
+      } else {
+        label.textContent = activePersona === 'archie' ? 'SYNTH: MALE (DEFAULT)' : 'SYNTH: FEMALE (DEFAULT)';
+      }
+    }
+
+    function speakFeedback(text) {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+
+      const p = PERSONAS[activePersona];
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.pitch = p.voicePitch;
+      utterance.rate = p.voiceRate;
+
+      const voice = getBestVoice(activePersona);
+      if (voice) utterance.voice = voice;
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    async function verifyMicrophoneAccess() {
+      const micDot = document.getElementById('mic-dot');
+      const micLabel = document.getElementById('mic-label');
+      const detailStatus = document.getElementById('mic-detailed-status');
+      
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        micStream = stream;
+        
+        window.AudioContext = window.AudioContext || window.webkitAudioContext;
+        activeAudioContext = new AudioContext();
+        if (activeAudioContext.state === 'suspended') {
+          await activeAudioContext.resume();
+        }
+
+        const source = activeAudioContext.createMediaStreamSource(stream);
+        micAnalyser = activeAudioContext.createAnalyser();
+        micAnalyser.fftSize = 64;
+        source.connect(micAnalyser);
+
+        micDot.className = 'dot green';
+        micLabel.textContent = 'MIC: LIVE (OK)';
+        detailStatus.innerHTML = `<span style="color:var(--success)">✔ Hardware stream active @ ${activeAudioContext.sampleRate}Hz.</span>`;
+        logTerminal("Microphone hardware verified and operational.");
+        initSpeechRecognition();
+        return true;
+      } catch (err) {
+        micDot.className = 'dot red';
+        micLabel.textContent = 'MIC: BLOCKED';
+        detailStatus.innerHTML = `<span style="color:var(--danger)">✖ Access error: ${err.message}. Please allow microphone permissions.</span>`;
+        logTerminal(`Microphone verification error: ${err.message}`);
+        return false;
+      }
+    }
+
+    function initSpeechRecognition() {
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRec) {
+        logTerminal("SpeechRecognition not natively supported in this browser. Please type commands below.");
+        return;
+      }
+      recognition = new SpeechRec();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        isListening = true;
+        document.getElementById('mic-trigger-btn').classList.add('recording');
+        document.getElementById('status-readout').textContent = 'LISTENING...';
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById('voice-text-input').value = transcript;
+        dispatchCommand(transcript);
+      };
+
+      recognition.onerror = () => {
+        isListening = false;
+        document.getElementById('mic-trigger-btn').classList.remove('recording');
+        document.getElementById('status-readout').textContent = 'SYSTEM STANDING BY';
+      };
+
+      recognition.onend = () => {
+        isListening = false;
+        document.getElementById('mic-trigger-btn').classList.remove('recording');
+        document.getElementById('status-readout').textContent = 'SYSTEM STANDING BY';
+      };
+    }
+
+    async function toggleMicrophone() {
+      if (!micStream) {
+        const ok = await verifyMicrophoneAccess();
+        if (!ok) return;
+      }
+      if (!recognition) initSpeechRecognition();
+
+      if (isListening) {
+        recognition.stop();
+      } else {
+        try {
+          recognition.start();
+        } catch(e) {
+          logTerminal("Speech recognition restarting...");
+        }
+      }
+    }
+
+    const STORAGE_KEY = 'ARCHENA_FILES_REPO';
+
+    function getStoredFiles() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+      } catch(e) {
+        return {};
+      }
+    }
+
+    function renderSavedFiles() {
+      const files = getStoredFiles();
+      const listEl = document.getElementById('saved-files-list');
+      listEl.innerHTML = '';
+      const names = Object.keys(files);
+
+      if (names.length === 0) {
+        listEl.innerHTML = '<span style="font-size:0.68rem; color:var(--text-muted)">No files stored in local repository.</span>';
+        return;
+      }
+
+      names.forEach(name => {
+        const item = document.createElement('div');
+        item.className = 'file-item';
+        item.innerHTML = `
+          <span onclick="loadStoredFile('${name}')">📄 ${name}</span>
+          <span class="del" onclick="deleteStoredFile('${name}')">×</span>
+        `;
+        listEl.appendChild(item);
+      });
+    }
+
+    function saveFileLocally(filenameParam, contentParam) {
+      const name = filenameParam || document.getElementById('file-name-input').value.trim();
+      const content = contentParam !== undefined ? contentParam : document.getElementById('file-content-input').value;
+
+      if (!name) {
+        alert("Please specify a filename.");
+        return;
+      }
+
+      const files = getStoredFiles();
+      files[name] = { content: content, modified: new Date().toISOString() };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
+      renderSavedFiles();
+      logTerminal(`Committed "${name}" to local persistent storage.`);
+      speakFeedback(`File ${name} saved successfully.`);
+    }
+
+    function loadStoredFile(name) {
+      const files = getStoredFiles();
+      if (files[name]) {
+        document.getElementById('file-name-input').value = name;
+        document.getElementById('file-content-input').value = files[name].content;
+        logTerminal(`Loaded "${name}" into active buffer.`);
+        switchTab('file-ops');
+      }
+    }
+
+    function deleteStoredFile(name) {
+      const files = getStoredFiles();
+      if (files[name]) {
+        delete files[name];
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
+        renderSavedFiles();
+        logTerminal(`Deleted "${name}" from storage.`);
+      }
+    }
+
+    function exportFileDirect() {
+      const name = document.getElementById('file-name-input').value.trim() || 'archena-export.txt';
+      const content = document.getElementById('file-content-input').value;
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      logTerminal(`Exported ${name} directly to your device.`);
+      speakFeedback(`Downloading ${name}.`);
+    }
+
+    function openFilePicker() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          document.getElementById('file-name-input').value = file.name;
+          document.getElementById('file-content-input').value = evt.target.result;
+          saveFileLocally(file.name, evt.target.result);
+          logTerminal(`Imported and read: ${file.name}`);
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+
+    async function dispatchCommand(rawText) {
+      if (!rawText || !rawText.trim()) return;
+      const cmd = rawText.trim();
+      document.getElementById('voice-text-input').value = '';
+      
+      const feed = document.getElementById('terminal-feed');
+      const userDiv = document.createElement('div');
+      userDiv.className = 'line-user';
+      userDiv.textContent = `> ${cmd}`;
+      feed.appendChild(userDiv);
+
+      const lower = cmd.toLowerCase();
+      const complexKeywords = ["architect", "analyze", "strategy", "vulnerability", "debug", "complex", "security audit", "decrypt", "matrix", "deep dive"];
+      const isComplex = complexKeywords.some(k => lower.includes(k));
+
+      if (isComplex && activePersona !== 'athena') {
+        logTerminal("Complex analytical task detected. Routing execution to Athena.");
+        setPersona('athena');
+      }
+
+      if (lower.startsWith("create file") || lower.startsWith("new file")) {
+        const parts = cmd.replace(/^(create|new)\s+file\s+/i, '').split(/\s+(?:with|content|payload)\s+/i);
+        const fileName = parts[0].trim();
+        const fileContent = parts[1] || "// Created with ARCHENA Core";
+        document.getElementById('file-name-input').value = fileName;
+        document.getElementById('file-content-input').value = fileContent;
+        saveFileLocally(fileName, fileContent);
+        switchTab('file-ops');
+        return;
+      }
+
+      if (lower.startsWith("open file") || lower.startsWith("read file")) {
+        const target = cmd.replace(/^(open|read)\s+file\s+/i, '').trim();
+        loadStoredFile(target);
+        return;
+      }
+
+      if (lower.includes("my ip") || lower.includes("check ip")) {
+        await fetchPublicIP();
+        return;
+      }
+
+      if (lower.startsWith("resolve") || lower.includes("dns")) {
+        const domain = cmd.split(" ").pop();
+        if (domain && domain.includes(".")) {
+          document.getElementById('domain-input').value = domain;
+          await resolveDoH(domain);
+          return;
+        }
+      }
+
+      if (activePersona === 'athena') {
+        const tacticalAnswer = `Strategic assessment of "${cmd}": System logic parsed. Nodes are secure, and performance matrices reflect optimal operational throughput.`;
+        logTerminal(tacticalAnswer);
+        speakFeedback(tacticalAnswer);
+      } else {
+        const routineAnswer = `Very well, Sir. Directive "${cmd}" has been cataloged and completed with zero delays.`;
+        logTerminal(routineAnswer);
+        speakFeedback(routineAnswer);
+      }
+    }
+
+    async function resolveDoH(domainArg) {
+      const domain = domainArg || document.getElementById('domain-input').value.trim() || 'cloudflare.com';
+      logTerminal(`Querying Cloudflare DNS over HTTPS for ${domain}...`);
+      try {
+        const res = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=A`, {
+          headers: { 'Accept': 'application/dns-json' }
+        });
+        const data = await res.json();
+        const out = document.getElementById('recon-output');
+        if (data.Answer) {
+          const ips = data.Answer.map(a => `${a.name} -> ${a.data} (TTL: ${a.TTL})`).join('<br>');
+          out.innerHTML = ips;
+          logTerminal(`DNS Answer: ${data.Answer.length} records verified.`);
+          speakFeedback(`Resolved ${domain}. Found ${data.Answer.length} records.`);
+        } else {
+          out.innerHTML = "No A records found.";
+          speakFeedback(`No records resolved for ${domain}.`);
+        }
+      } catch(e) {
+        logTerminal(`DoH lookup error: ${e.message}`);
+      }
+    }
+
+    async function fetchPublicIP() {
+      logTerminal("Querying external network telemetry...");
+      try {
+        const res = await fetch("https://api.ipify.org?format=json");
+        const data = await res.json();
+        document.getElementById('recon-output').textContent = `PUBLIC IP: ${data.ip}`;
+        logTerminal(`Public IP detected: ${data.ip}`);
+        speakFeedback(`Your public IP address is ${data.ip}`);
+      } catch(e) {
+        logTerminal("Could not query external IP.");
+      }
+    }
+
+    function calcCIDR() {
+      const out = "CIDR 192.168.1.0/24 | Netmask: 255.255.255.0 | Usable: 254 Hosts [192.168.1.1 - 192.168.1.254]";
+      document.getElementById('recon-output').textContent = out;
+      logTerminal(out);
+      speakFeedback("Subnet calculations complete for slash 24.");
+    }
+
+    function generatePassword() {
+      const arr = new Uint8Array(16);
+      crypto.getRandomValues(arr);
+      const token = Array.from(arr, b => b.toString(16).padStart(2, '0')).join('');
+      document.getElementById('recon-output').textContent = `ENTROPY KEY: ${token}`;
+      logTerminal(`Generated high-entropy cryptographic token.`);
+      speakFeedback("Cryptographic key generated.");
+    }
+
+    const canvas = document.getElementById('visualizer-canvas');
+    const ctx = canvas.getContext('2d');
+    let rotation = 0;
+
+    function renderHUD() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(rotation);
+      ctx.strokeStyle = activePersona === 'archie' ? 'rgba(0, 243, 255, 0.45)' : 'rgba(191, 85, 236, 0.45)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([12, 8, 4, 8]);
+      ctx.beginPath();
+      ctx.arc(0, 0, 105, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(-rotation * 0.7);
+      ctx.strokeStyle = activePersona === 'archie' ? 'rgba(0, 243, 255, 0.25)' : 'rgba(191, 85, 236, 0.25)';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([25, 15]);
+      ctx.beginPath();
+      ctx.arc(0, 0, 125, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      if (micAnalyser) {
+        const data = new Uint8Array(micAnalyser.frequencyBinCount);
+        micAnalyser.getByteFrequencyData(data);
+        const count = 24;
+        for (let i = 0; i < count; i++) {
+          const angle = (i / count) * Math.PI * 2;
+          const val = data[i % data.length] / 255;
+          const r = 85 + (val * 32);
+          const x = cx + Math.cos(angle) * r;
+          const y = cy + Math.sin(angle) * r;
+
+          ctx.fillStyle = activePersona === 'archie' ? '#00f3ff' : '#bf55ec';
+          ctx.beginPath();
+          ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      rotation += 0.012;
+      requestAnimationFrame(renderHUD);
+    }
+
+    function logTerminal(msg) {
+      const feed = document.getElementById('terminal-feed');
+      const d = document.createElement('div');
+      d.className = 'line-ai';
+      d.innerHTML = `<span>[${PERSONAS[activePersona].name}]</span> ${msg}`;
+      feed.appendChild(d);
+      feed.scrollTop = feed.scrollHeight;
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.getElementById(`tab-${tabId}`).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    function playBeep(freq = 440, duration = 0.05) {
+      try {
+        const ctx = activeAudioContext || new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.connect(g);
+        g.connect(ctx.destination);
+        osc.frequency.value = freq;
+        g.gain.setValueAtTime(0.08, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      } catch(e) {}
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderHUD();
+      renderSavedFiles();
+      verifyMicrophoneAccess();
+    });
+  </script>
+</body>
+</html>

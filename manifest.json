@@ -1,0 +1,16 @@
+{
+  "short_name": "ARCHENA",
+  "name": "ARCHENA Neural AI & Cyber OS",
+  "icons": [
+    {
+      "src": "assets/archie.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#03080e",
+  "theme_color": "#00f3ff",
+  "display": "standalone",
+  "orientation": "portrait"
+}
